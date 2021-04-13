@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<title>JavaScript Grading Program</title>
+		<meta charset="utf-8">
+		<link href="style.css" rel="stylesheet">
+		<script src="https://unpkg.com/vue@next"></script>
+	</head>
+
+    <body>
+        <div id='app'>
+
+            <div class="white stuff-box shadowed">
+                <h1>Vue.JS Weather App</h1>
+            </div>
+
+            <div class="blue stuff-box shadowed">
+                <h3>Your Location</h3>
+                <p>You are located in {{city}}, {{state}}, {{country}} at coordinates ({{latitude}}, {{longitude}})</p>
+            </div>
+
+            <div class="yellow stuff-box shadowed">
+                <h3>Current conditions</h3>
+                <p>Current weather conditions at {{date}}</p>
+                <ul>
+                    <li>Current temperature: {{currentTemp}}F</li>
+                    <li>High: {{highTemp}}F</li>
+                    <li>Low: {{lowTemp}}F</li>
+                    <li>Sky conditions: {{sky}}</li>
+                    <li>Humidity: {{humidity}}%</li>
+                    <li>Air pressure: {{pressure}} hPa</li>
+                </ul>
+            </div>
+
+            <div class="cyan stuff-box shadowed">
+                <h3>5 day 3-hour forecast</h3>
+                <p>
+                    <span class="red"> {{unlikelyNum}} unlikely </span>
+                    <span class="black"> {{neutralNum}} neutral </span>
+                    <span class="green"> {{likelyNum}} likely </span>
+                </p>
+                <div v-for="(prediction, idx) in states"
+                     v-on:click="forecastToggle"
+                     class="neutral"
+                     :data-idx="idx">
+                        <h3>Conditions for {{timeList[idx]}}</h3>
+                        <p>
+                            <ul>
+                                <li>Temperature: {{tempList[idx]}}F</li>
+                                <li>Sky conditions: {{skyList[idx]}}</li>
+                                <li>Humidity: {{humidityList[idx]}}%</li>
+                                <li>Air pressure: {{pressureList[idx]}} hPa</li>
+                            </ul>
+                        </p>
+                </div>
+            </div>
+
+        </div>
+
+        <script>
+            const app = Vue.createApp({
+                data() {
+                    return {
+                        states: new Array(40).fill('neutral'),
+                        neutralNum: 40,
+                        likelyNum: 0,
+                        unlikelyNum: 0,
+                        date: new Date().toLocaleString(),
+                        city: 'NA',
+                        state: 'NA',
+                        country: 'NA',
+                        latitude: 'NA',
+                        longitude: 'NA',
+                        currentTemp: 'NA',
+                        highTemp: 'NA',
+                        lowTemp: 'NA',
+                        sky: 'NA',
+                        humidity: 'NA',
+                        pressure: 'NA',
+                        timeList: new Array(40).fill('NA'),
+                        tempList: new Array(40).fill('NA'),
+                        skyList: new Array(40).fill('NA'),
+                        humidityList: new Array(40).fill('NA'),
+                        pressureList: new Array(40).fill('NA'),
+                    };
+                },
+
+                created() {
+                    fetch("http://api.ipstack.com/134.201.250.155?access_key=bd168ae1dd2742ebc4221f9bb9698824")
+                        .then(response => response.json())
+                        .then(data => {
+                            this.latitude = data.latitude;
+                            this.longitude = data.longitude;
+                            this.city = data.city;
+                            this.state = data.region_name;
+                            this.country = data.country_name;
+                            return fetch(`http://api.openweathermap.org/data/2.5/onecall?lat=${this.latitude}&lon=${this.longitude}&units=imperial&appid=ea2fbe41d70f89a4e9645d9f5326b6d2`)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            this.currentTemp = data.current.temp
+                            this.highTemp = data.daily[0].temp.max
+                            this.lowTemp = data.daily[0].temp.min
+                            this.sky = data.current.weather[0].description
+                            this.humidity = data.current.humidity
+                            this.pressure = data.current.pressure
+                            return fetch(`http://api.openweathermap.org/data/2.5/forecast?lat=${this.latitude}&lon=${this.longitude}&units=imperial&appid=ea2fbe41d70f89a4e9645d9f5326b6d2`)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data)
+                            for (var i in data.list) {
+                                this.timeList[i] = data.list[i].dt_txt
+                                this.tempList[i] = data.list[i].main.temp
+                                this.skyList[i] = data.list[i].weather[0].description
+                                this.humidityList[i] = data.list[i].main.humidity
+                                this.pressureList[i] = data.list[i].main.pressure
+                            }
+                        })
+
+                },
+
+
+
+                methods: {
+                    forecastToggle(event) {
+                        div = event.target
+                        // Get the index of this <div> from the DOM
+                        let idx = div.getAttribute('data-idx');
+                        if (this.states[idx] === 'neutral') {
+                            this.states[idx] = 'likely';
+                            this.likelyNum++;
+                            this.neutralNum--;
+                        }
+                        else if (this.states[idx] === 'likely') {
+                            this.states[idx] = 'unlikely';
+                            this.unlikelyNum++;
+                            this.likelyNum--;
+                        }
+                        else if (this.states[idx] === 'unlikely') {
+                            this.states[idx] = 'neutral';
+                            this.neutralNum++;
+                            this.unlikelyNum--;
+                        }
+
+                        div.setAttribute('class', this.states[idx]);
+                        console.log(this.states[idx]);
+                    },
+                },
+            });
+
+            const vm = app.mount('#app');
+        </script>
+    </body>
+</html>
