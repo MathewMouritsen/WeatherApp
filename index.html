@@ -17,20 +17,27 @@
 
             <div class="blue stuff-box shadowed">
                 <h3>Your Location</h3>
-                <p>You are located in {{city}}, {{state}}, {{country}} at coordinates ({{latitude}}, {{longitude}})</p>
+                <div v-if="city === 'NA' ">Retrieving location. Please wait...</div>
+                <div v-else>
+                    <p>You are located in {{city}}, {{state}}, {{country}} at coordinates ({{latitude}}, {{longitude}})</p>
+                </div>
             </div>
 
             <div class="yellow stuff-box shadowed">
                 <h3>Current conditions</h3>
-                <p>Current weather conditions at {{date}}</p>
-                <ul>
-                    <li>Current temperature: {{currentTemp}}F</li>
-                    <li>High: {{highTemp}}F</li>
-                    <li>Low: {{lowTemp}}F</li>
-                    <li>Sky conditions: {{sky}}</li>
-                    <li>Humidity: {{humidity}}%</li>
-                    <li>Air pressure: {{pressure}} hPa</li>
-                </ul>
+                <div v-if="currentTemp === 'NA' ">Retrieving forecast. Please wait...</div>
+                <div v-else>
+                    <p>Current weather conditions at {{date}}
+                        <ul>
+                            <li>Current temperature: {{currentTemp}}F</li>
+                            <li>High: {{highTemp}}F</li>
+                            <li>Low: {{lowTemp}}F</li>
+                            <li>Sky conditions: {{sky}}</li>
+                            <li>Humidity: {{humidity}}%</li>
+                            <li>Air pressure: {{pressure}} hPa</li>
+                        </ul>
+                    </p>
+                </div>
             </div>
 
             <div class="cyan stuff-box shadowed">
@@ -40,10 +47,8 @@
                     <span class="black"> {{neutralNum}} neutral </span>
                     <span class="green"> {{likelyNum}} likely </span>
                 </p>
-                <div v-for="(prediction, idx) in states"
-                     v-on:click="forecastToggle"
-                     class="neutral"
-                     :data-idx="idx">
+                <div v-if="tempList[0] === 'NA' ">Retrieving forecast. Please wait...</div>
+                <div v-else v-for="(prediction, idx) in states" @click.capture="forecastToggle(prediction, idx)" :class=this.states[idx] :data-idx="idx">
                         <h3>Conditions for {{timeList[idx]}}</h3>
                         <p>
                             <ul>
@@ -87,7 +92,7 @@
                 },
 
                 created() {
-                    fetch("http://api.ipstack.com/134.201.250.155?access_key=bd168ae1dd2742ebc4221f9bb9698824")
+                    fetch("http://api.ipstack.com/check?access_key=bd168ae1dd2742ebc4221f9bb9698824")
                         .then(response => response.json())
                         .then(data => {
                             this.latitude = data.latitude;
@@ -124,10 +129,7 @@
 
 
                 methods: {
-                    forecastToggle(event) {
-                        div = event.target
-                        // Get the index of this <div> from the DOM
-                        let idx = div.getAttribute('data-idx');
+                    forecastToggle(prediction, idx) {
                         if (this.states[idx] === 'neutral') {
                             this.states[idx] = 'likely';
                             this.likelyNum++;
@@ -144,7 +146,6 @@
                             this.unlikelyNum--;
                         }
 
-                        div.setAttribute('class', this.states[idx]);
                         console.log(this.states[idx]);
                     },
                 },
